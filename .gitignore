@@ -114,3 +114,7 @@ fabric.properties
 .idea/**/markdown-navigator/
 
 # End of https://www.gitignore.io/api/dart,intellij
+misc.xml
+modules.xml
+Advent-of-Code-2019.iml
+$PRODUCT_WORKSPACE_FILE$

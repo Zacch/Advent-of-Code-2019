@@ -4,8 +4,8 @@ int fuelNeededFor(int weight) {
   return (weight / 3).floor() - 2;
 }
 
-Future<void> day1() async {
-  var file = File('input/day1.txt');
+Future<void> day01() async {
+  var file = File('input/Day01.txt');
 
   if (await file.exists()) {
     var contents = await file.readAsLines();

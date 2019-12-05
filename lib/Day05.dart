@@ -9,7 +9,7 @@ Future<void> day05() async {
     var startingMemory = parts.map((s) => int.parse(s)).toList();
     var computer = IntcodeComputer(startingMemory, [1]);
     computer.execute();
-    print('Part 1: ${computer.output}');
+    print('Part 1: ${computer.output.last}');
   }
 }
 

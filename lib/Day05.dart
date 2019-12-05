@@ -17,7 +17,7 @@ class IntcodeComputer {
   List<int> memory;
   int ip;
   List<int> input;
-  List<int> output;
+  List<int> output = [];
   bool isRunning;
 
   IntcodeComputer(this.memory, this.input);
@@ -98,6 +98,7 @@ abstract class Instruction {
 class Add extends Instruction {
   @override
   void execute(IntcodeComputer state) {
+    modes[2] = 1;
     load(state, 3);
     state.setMemory(parameters[2], parameters[0] + parameters[1]);
   }
@@ -106,6 +107,7 @@ class Add extends Instruction {
 class Multiply extends Instruction {
   @override
   void execute(IntcodeComputer state) {
+    modes[2] = 1;
     load(state, 3);
     state.setMemory(parameters[2], parameters[0] * parameters[1]);
   }
@@ -125,7 +127,7 @@ class Output extends Instruction {
   @override
   void execute(IntcodeComputer state) {
     load(state, 1);
-    state.output.add(state.memory[parameters[0]]);
+    state.output.add(parameters[0]);
   }
 }
 

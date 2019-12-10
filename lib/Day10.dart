@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'dart:math';
+import 'Point.dart';
 
 var space = List<List<bool>>();
 int get height { return space.length; }
@@ -17,33 +18,39 @@ Future<void> day10() async {
       space.add(line.runes.map((rune) => rune == asteroid_rune).toList());
     }
 
-    var part1 = 0;
+    var bestAsteroid = Point.origin();
+    var visibleAsteroids = List<Point>();
     for(var y = 0; y < height; y++) {
       for(var x = 0; x < width; x++) {
-        var visible = countVisibleFrom(x, y);
-        if (visible > part1) {
-          part1 = visible;
+        var visible = visibleAsteroidsFrom(x, y);
+        if (visible.length > visibleAsteroids.length) {
+          bestAsteroid = Point(x, y);
+          visibleAsteroids = visible;
         }
       }
     }
-    print('Part 1: $part1');
+    print('Part 1: ${visibleAsteroids.length}');
+
+    var asteroidsLocal = visibleAsteroids.map((p) => p - bestAsteroid).toList();
+    asteroidsLocal.sort((p1, p2) => p1.compassAngle < p2.compassAngle ? -1: 1);
+    var lucky200 = asteroidsLocal[199] + bestAsteroid;
+    print('Part 2: ${lucky200.x * 100 + lucky200.y}');
   }
 }
 
-
-int countVisibleFrom(int x, int y) {
+List<Point> visibleAsteroidsFrom(int x, int y) {
   if (!space[y][x]) {
-    return -1;
+    return [];
   }
-  var visible = 0;
+  var result = List<Point>();
   for(var y1 = 0; y1 < height; y1++) {
     for(var x1 = 0; x1 < width; x1++) {
       if (space[y1][x1] && lineOfSight(x, y, x1, y1)) {
-        visible++;
+        result.add(Point(x1, y1));
       }
     }
   }
-  return visible;
+  return result;
 }
 
 bool lineOfSight(int x0, int y0, int x1, int y1) {

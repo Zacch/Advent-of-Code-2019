@@ -2,57 +2,8 @@
 
 import 'dart:io';
 
-class Point {
-  int x;
-  int y;
-  Point(this.x, this.y);
-  Point.origin() { x = 0;  y = 0; }
-
-  Point operator +(Point other) {
-    return Point(x + other.x, y + other.y);
-  }
-
-  bool isInside(Rect r) {
-    return x >= r.left && x <= r.right && y >= r.bottom && y <= r.top;
-  }
-
-  int manhattanDistanceFromOrigin() {
-    return x.abs() + y.abs();
-  }
-
-
-  @override
-  bool operator ==(other) {
-    if (other.runtimeType == Point) {
-      var p = other as Point;
-      return x == p.x && y == p.y;
-    }
-    return false;
-  }
-
-  @override String toString() { return '($x, $y)'; }
-}
-
-class Rect {
-  int bottom;
-  int left;
-  int top;
-  int right;
-  Rect(this.bottom, this.left, this.top, this.right);
-  Rect.empty() { bottom = 0; left = 0; top = 0; right = 0; }
-
-  int width() { return right - left; }
-  int height() { return top - bottom; }
-
-  @override String toString() {return 'Rect{($left, $bottom), ($right, $top)}';}
-
-  void grow(int i) {
-    bottom -= i;
-    left -= i;
-    top += i;
-    right += i;
-  }
-}
+import 'Point.dart';
+import 'Rect.dart';
 
 class Grid {
   Rect bounds;

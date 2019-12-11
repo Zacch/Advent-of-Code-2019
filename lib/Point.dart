@@ -38,13 +38,15 @@ class Point {
   }
 
   @override
-  bool operator ==(other) {
-    if (other.runtimeType == Point) {
-      var p = other as Point;
-      return x == p.x && y == p.y;
-    }
-    return false;
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Point &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y;
+
+  @override
+  int get hashCode => x.hashCode ^ y.hashCode;
 
   @override String toString() { return '($x, $y)'; }
 }

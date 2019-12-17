@@ -8,6 +8,10 @@ class Point {
   Point(this.x, this.y);
   Point.origin() { x = 0;  y = 0; }
 
+  Point copy() {
+    return Point(x, y);
+  }
+
   Point operator +(Point other) {
     return Point(x + other.x, y + other.y);
   }
@@ -23,6 +27,15 @@ class Point {
   int manhattanDistanceFromOrigin() {
     return x.abs() + y.abs();
   }
+
+  Point turnLeft() {
+    return Point(-y, x);
+  }
+
+  Point turnRight() {
+    return Point(y, -x);
+  }
+
 
   /// Returns the angle from the origin to the point in radians, twisted so that
   /// points on the positive Y axis (north) have angle 0,
@@ -40,10 +53,10 @@ class Point {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Point &&
-          runtimeType == other.runtimeType &&
-          x == other.x &&
-          y == other.y;
+          other is Point &&
+              runtimeType == other.runtimeType &&
+              x == other.x &&
+              y == other.y;
 
   @override
   int get hashCode => x.hashCode ^ y.hashCode;

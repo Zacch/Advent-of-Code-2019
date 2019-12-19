@@ -13,6 +13,7 @@ var WALL = '#'.codeUnitAt(0);
 var ENTRANCE = '@'.codeUnitAt(0);
 
 var allPaths = Map<int, List<Path>>();
+var shortestPathLength = 1000000000;
 
 Future<void> day18() async {
   var file = File('input/Day18.txt');
@@ -49,10 +50,49 @@ Future<void> day18() async {
       allPaths[key] = keyPaths(keys[key], grid);
     }
     print('\nPaths from each key to all other keys:\n$allPaths');
+    // Now we have all we need to solve part 1!
 
-    // Now we have all we need to find part 1!
+    findShortestPath(pathsFromEntrance, 0, [], allPaths);
+    print('Part 1: $shortestPathLength');
   }
 }
+
+var pathsTried = 0;
+void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, Map<int, List<Path>> futurePaths) {
+  var keysTaken = pathsTaken.map((path) => path.key);
+  if (futurePaths.isEmpty) {
+    if (lengthSoFar < shortestPathLength) {
+      print('New Shortest Path ($lengthSoFar): ${keysTaken.map((k) => String.fromCharCode(k))}');
+      shortestPathLength = lengthSoFar;
+    }
+    pathsTried++;
+    if (pathsTried % 10000 == 0) {
+      print('Tried $pathsTried paths so far. Shortest is $shortestPathLength');
+    }
+
+    return;
+  }
+  var possiblePaths = paths.where((path) => path.locks.where((lock) => !keysTaken.contains(lock)).isEmpty);
+  if (possiblePaths.isEmpty) {
+    print('Dead End with keys $keysTaken at $paths!');
+    return;
+  }
+  for (var path in possiblePaths) {
+    if (futurePaths.containsKey(path.key)) {
+      var nextPaths = futurePaths[path.key];
+      var nextPathsTaken = List<Path>.from(pathsTaken);
+      nextPathsTaken.add(path);
+      var nextFuturePaths = Map<int, List<Path>>.from(futurePaths);
+      nextFuturePaths.remove(path.key);
+      findShortestPath(nextPaths, lengthSoFar + path.length, nextPathsTaken, nextFuturePaths);
+    }
+  }
+}
+
+
+
+
+
 
 bool isKey(int c) {
   return c >= a && c <= z;

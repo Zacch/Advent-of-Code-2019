@@ -28,6 +28,15 @@ class Grid {
     return "";
   }
 
+  int getChar(Point p) {
+    if (p.isInside(bounds)) {
+      var y = p.y - bounds.bottom;
+      var x = p.x - bounds.left;
+      return grid[y][x].codeUnitAt(0);
+    }
+    return -1;
+  }
+
   draw() {
     for (var row in grid) {
       var line = "";

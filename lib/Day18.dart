@@ -58,6 +58,14 @@ Future<void> day18() async {
 }
 
 var pathsTried = 0;
+
+// Dijkstra’s Algorithm
+void dijkstra() {
+  var frontier = SplayTreeSet<PathList>();
+
+}
+
+// Dept-first recursive
 void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, Map<int, List<Path>> futurePaths) {
   var keysTaken = pathsTaken.map((path) => path.key);
   if (futurePaths.isEmpty) {
@@ -88,11 +96,6 @@ void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, 
     }
   }
 }
-
-
-
-
-
 
 bool isKey(int c) {
   return c >= a && c <= z;
@@ -169,3 +172,26 @@ class Path {
   @override int get hashCode => end.hashCode;
 }
 
+class PathList implements Comparable {
+  var paths = List<Path>();
+  int get length => paths.fold(0, (s, p) => s + p.length);
+
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is PathList &&
+              runtimeType == other.runtimeType &&
+              length == other.length;
+
+  @override
+  int get hashCode => length.hashCode;
+
+  @override
+  int compareTo(other) {
+    if (other is PathList) {
+      return(length.compareTo(other.length));
+    }
+    return null;
+  }
+}

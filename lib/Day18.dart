@@ -57,6 +57,12 @@ Future<void> day18() async {
   }
 }
 
+// Depth-first search didn't work so well. This is the output after two days of execution:
+//Tried 4645500000 paths so far. Shortest is 4896
+//Tried 4645510000 paths so far. Shortest is 4896
+//Tried 4645520000 paths so far. Shortest is 4896
+//Tried 4645530000 paths so far. Shortest is 4896
+
 var pathsTried = 0;
 void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, Map<int, List<Path>> futurePaths) {
   var keysTaken = pathsTaken.map((path) => path.key);
@@ -69,7 +75,6 @@ void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, 
     if (pathsTried % 10000 == 0) {
       print('Tried $pathsTried paths so far. Shortest is $shortestPathLength');
     }
-
     return;
   }
   var possiblePaths = paths.where((path) => path.locks.where((lock) => !keysTaken.contains(lock)).isEmpty);

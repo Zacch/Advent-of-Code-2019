@@ -1,0 +1,128 @@
+
+~A
+--
+> NOT A J
+> RUN
+
+..@.............. Should have jumped
+#####.#..########
+   abcdefghi
+
+~A + D
+------
+> NOT A J
+> OR D J
+> RUN
+
+@................ Should NOT have jumped
+#####.#..########
+
+~A + ~C * D
+-----------
+> NOT A J
+> NOT C T
+> AND D T
+> OR T J
+> RUN
+
+..@.............. Should NOT have jumped
+#####.#.#..##.###
+   abcdefghi
+
+
+~A + ~C * D * H
+---------------
+> NOT A J
+> NOT C T
+> AND D T
+> AND H T
+> OR T J
+> RUN
+
+...@............. Should have jumped
+#####.##.#.##.###
+    abcdefghi
+
+
+~A + (~C + I) * D * H
+---------------------
+> NOT A J
+> NOT C T
+> OR I T
+> AND D T
+> AND H T
+> OR T J
+> RUN
+
+@................ Should NOT have jumped
+#####..###.#..###
+ abcdefghi
+
+
+(~C + I) * D * H * ~B + ~A
+--------------------------
+> NOT C J
+> OR I J
+> NOT B T
+> AND D T
+> AND H T
+> AND T J
+> NOT A T
+> OR T J
+> RUN
+
+..@.............. Should have jumped
+#####.#..########
+   abcdefghi
+
+
+(~C + I) * D * H * (~B + ~C) + ~A
+---------------------------------
+> NOT C J
+> NOT B T
+> OR J T
+> OR I J
+> AND D T
+> AND H T
+> AND T J
+> NOT A T
+> OR T J
+> RUN
+
+...@............. Should have jumped
+#####.##...#..###
+    abcdefghi
+
+
+(~B + ~C + I) * D * H + ~A
+--------------------------
+> NOT B T
+> NOT C J
+> OR T J
+> OR I J
+> AND D J
+> AND H J
+> NOT A T
+> OR T J
+> RUN
+
+@................ Should NOT have jumped
+#####..###.#..###
+ abcdefghi
+
+(~B + ~C + (I * E)) * D * H + ~A
+--------------------------------
+> NOT B T
+> NOT C J
+> OR T J
+> NOT I T
+> NOT T T
+> AND E T
+> OR T J
+> AND D J
+> AND H J
+> NOT A T
+> OR T J
+> RUN
+
+Success!

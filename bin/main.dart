@@ -1,6 +1,6 @@
 
-import 'package:Advent_of_Code_2019/Day18.dart';
+import 'package:Advent_of_Code_2019/Day20.dart';
 
 main(List<String> arguments) async {
-  await day18();
+  await day20();
 }

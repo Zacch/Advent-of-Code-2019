@@ -6,41 +6,42 @@ Future<void> day22() async {
   if (await file.exists()) {
     var contents = await file.readAsLines();
 
-    var deck = SpaceDeck(10007);
+    var deckSize = 10;
+    var deck = SpaceDeck(deckSize);
+    var techniques = List<ShuffleTechnique>();
     for (var line in contents) {
       var words = line.split(' ');
       switch (words[0]) {
         case 'cut':
-          deck.cut(int.parse(words[1]));
+          var cutSize = int.parse(words[1]);
+          deck.cut(cutSize);
+          techniques.add(Cut(cutSize, deckSize));
           break;
         case 'deal':
           if (words[2] == 'new') {
             deck.dealIntoNewStack();
+            techniques.add(DealIntoNewStack(deckSize));
           } else {
-            deck.dealWithIncrement(int.parse(words[3]));
+            var increment = int.parse(words[3]);
+            deck.dealWithIncrement(increment);
+            techniques.add(DealWithIncrement(increment, deckSize));
           }
       }
     }
-    print('Part 1: ${deck.cards.indexOf(2019)}');
+    techniques = techniques.reversed.toList(growable: false);
 
-    ShuffleTechnique move = DealIntoNewStack(10);
-    print('DealIntoNewStack');
-    print(List<int>.generate(10, (i) => i).map((i) => move.indexBefore(i)));
+//    print('Part 1: ${deck.cards.indexOf(2019)}');
 
-    move = Cut(3, 10);
-    print('Cut 3');
-    print(List<int>.generate(10, (i) => i).map((i) => move.indexBefore(i)));
 
-    move = Cut(-4, 10);
-    print('Cut -4');
-    print(List<int>.generate(10, (i) => i).map((i) => move.indexBefore(i)));
-
-    move = DealWithIncrement(3, 10);
-    print('DealWithIncrement');
-    print(List<int>.generate(10, (i) => i).map((i) => move.indexBefore(i)));
+    print(List<int>.generate(10, (i) => i).map((i) => getIndexBefore(i, techniques)));
   }
 }
 
+int getIndexBefore(int indexAfter, List<ShuffleTechnique> techniques) {
+  var current = indexAfter;
+  techniques.forEach((technique) { current = technique.indexBefore(current); });
+  return current;
+}
 class SpaceDeck {
   int length;
   List<int> cards;

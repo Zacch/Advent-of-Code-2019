@@ -11,28 +11,30 @@ Future<void> day16() async {
     var raw = await file.readAsString();
     var contents = raw.codeUnits.map((d) => d - ZERO).toList();
     var input = List<int>.from(contents);
+    var inputLength = input.length;
 
-    var patterns = makePatterns(input.length);
-    for (var i = 1; i <= ITERATIONS; i++) {
+    var patterns = makePatterns(inputLength);
+    for (var i = 0; i < ITERATIONS; i++) {
       input = fft(input, patterns);
     }
     var output = String.fromCharCodes(input.map((d) => d + ZERO));
     print('Part 1: ${output.substring(0, 8)}');
 
-    var patternLength = input.length;
-    var totalLength = 10000 * patternLength;
+    input = List<int>.from(contents);
+    var totalLength = 10000 * inputLength;
     var startPos = int.parse(raw.substring(0, 7));
     var neededLength = totalLength - startPos;
 
     var vector = List<int>();
-    vector.addAll(input.getRange(startPos % patternLength, patternLength));
-    for (int i = neededLength ~/ patternLength; i > 0; i--) {
+    vector.addAll(input.getRange(startPos % inputLength, inputLength));
+
+    for (var i = neededLength ~/ inputLength; i > 0; i--) {
       vector.addAll(input);
     }
 
-    for (int i = 0; i < ITERATIONS; i++) {
+    for (var i = 0; i < ITERATIONS; i++) {
       print(vector.getRange(vector.length - 10, vector.length));
-      vector = simpleFft(vector);
+      vector = specialCaseFft(vector);
     }
     print('Part 2: ${vector.getRange(0, 8).fold('', (s, i) => s.toString() + i.toString())}');
   }
@@ -70,11 +72,11 @@ List<int> fft(List<int> input, List<List<int>> patterns) {
   return output;
 }
 
-List<int> simpleFft(List<int> input) {
+List<int> specialCaseFft(List<int> input) {
   var output = List<int>(input.length);
 
-  int sum = 0;
-  for (int i = input.length - 1; i >= 0; i--) {
+  var sum = 0;
+  for (var i = input.length - 1; i >= 0; i--) {
     sum += input[i];
     output[i] = sum % 10;
   }

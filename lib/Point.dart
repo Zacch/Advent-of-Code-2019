@@ -8,6 +8,12 @@ class Point {
   Point(this.x, this.y);
   Point.origin() { x = 0;  y = 0; }
 
+  static final ORIGIN = Point.origin();
+  static final UP = Point(0, 1);
+  static final DOWN = Point(0, -1);
+  static final LEFT = Point(-1, 0);
+  static final RIGHT = Point(1, 0);
+
   Point copy() {
     return Point(x, y);
   }

@@ -1,4 +1,5 @@
 
+import 'dart:collection';
 import 'dart:io';
 
 import 'Grid.dart';
@@ -9,6 +10,9 @@ var A = 'A'.codeUnitAt(0);
 var Z = 'Z'.codeUnitAt(0);
 var VOID = ' '.codeUnitAt(0);
 
+Grid grid;
+var connections = Map<Point, Point>();
+
 Future<void> day20() async {
   var file = File('input/Day20.txt');
 
@@ -16,7 +20,7 @@ Future<void> day20() async {
     var contents = await file.readAsLines();
     var h = contents.length;
     var w = contents[0].length;
-    var grid = Grid(Rect(0, 0, h - 1, w - 1));
+    grid = Grid(Rect(0, 0, h - 1, w - 1));
     var p = Point(0, 0);
     for (var line in contents) {
       line.codeUnits.forEach((c) {
@@ -26,7 +30,6 @@ Future<void> day20() async {
       p.y++;
       p.x = 0;
     }
-    grid.draw();
 
     var teleports = Map<String, List<Point>>();
     var ignoreLetterAt = List<Point>();
@@ -68,14 +71,54 @@ Future<void> day20() async {
     teleports.remove('ZZ');
     print(teleports);
     print('Start $start, Goal $goal');
-    var connections = Map<Point, Point>();
     for (var points in teleports.values) {
       connections[points[0]] = points[1];
       connections[points[1]] = points[0];
     }
     print(connections);
+//    connections.keys.forEach((p) {grid.set(p, '*');});
+//    grid.set(start, 's');
+//    grid.set(goal, 'g');
+
+    print('Part 1: ${shortestPath(start, goal)}');
+    grid.draw();
   }
 }
+
+int shortestPath(Point start, Point goal) {
+  var frontier = Queue<List<Point>>();
+  frontier.add([start]);
+  var visited = List<Point>();
+  visited.add(start);
+
+  while (frontier.isNotEmpty) {
+    var current = frontier.removeFirst();
+    var p = current.last;
+    var possibleMoves = [p + Point.UP, p + Point.DOWN, p + Point.LEFT, p + Point.RIGHT];
+    if (connections.containsKey(p)) {
+      possibleMoves.add(connections[p]);
+    }
+    for (var move in possibleMoves) {
+      if (visited.contains(move)) {
+        continue;
+      }
+      if (!(grid.get(move) == '.')) {
+        continue;
+      }
+
+      var next = List<Point>.from(current);
+      next.add(move);
+      if (move == goal) {
+        next.forEach((p) {grid.set(p, '_');});
+        return (next.length - 1);
+      }
+      frontier.add(next);
+      visited.add(move);
+    }
+  }
+  return -1;
+}
+
 
 bool isLetter(int c) {
   return c >= A && c <= Z;

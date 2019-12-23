@@ -14,12 +14,16 @@ class IntcodeComputer {
 
   IntcodeComputer(this.memory, this.input);
 
-  List<int> execute() {
+  void boot() {
     ip = 0;
     isRunning = true;
     isWaiting = false;
     isHalted = false;
     currentInstruction = getNextInstruction();
+  }
+
+  List<int> execute() {
+    boot();
     return run();
   }
 
@@ -32,6 +36,16 @@ class IntcodeComputer {
       currentInstruction = getNextInstruction();
     }
     return output;
+  }
+
+  void step() {
+    if (isRunning) {
+      currentInstruction.execute(this);
+      if (isWaiting || isHalted) {
+        return;
+      }
+      currentInstruction = getNextInstruction();
+    }
   }
 
   List<int> continueWithNewInput(List<int> newInput) {

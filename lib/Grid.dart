@@ -4,6 +4,8 @@ import 'Point.dart';
 class Grid {
   Rect bounds;
   List<List<String>> grid;
+  int get height { return bounds.height(); }
+  int get width { return bounds.width(); }
 
   Grid(Rect bounds) {
     this.bounds = bounds;

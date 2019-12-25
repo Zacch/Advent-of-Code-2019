@@ -18,7 +18,22 @@ Future<void> day25() async {
     var computer = IntcodeComputer(List.from(startingMemory), []);
     computer.execute();
 
-    var save = List<int>.from(computer.memory);
+    print('Advent of Code 2019, final puzzle');
+    print('---------------------------------');
+    print("Feel free to explore Santa's ship and look for the password for the main airlock.");
+    print('You can enter s, n, e, w to move and use "save" and "load" if you like.');
+
+    var save = List<int>.from(startingMemory);
+
+    // Load saved game
+    var saveFile = File('input/Day25(Saved Game).txt');
+    if (await saveFile.exists()) {
+      var savedContents = await saveFile.readAsString();
+      var savedParts = savedContents.split(',');
+      save = savedParts.map((s) => int.parse(s)).toList();
+      print('\nA saved game with the solution has been provided.');
+      print('To cheat, just type "load" followed by "s"!');
+    }
 
     print(String.fromCharCodes(computer.output));
     computer.output.clear();
@@ -33,6 +48,7 @@ Future<void> day25() async {
           break;
         case 'load':
           computer.memory = List<int>.from(save);
+          print('Game loaded!\n\nCommand?');
           continue;
           break;
       }

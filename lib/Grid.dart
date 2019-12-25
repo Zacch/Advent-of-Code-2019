@@ -7,10 +7,15 @@ class Grid {
   int get height { return bounds.height(); }
   int get width { return bounds.width(); }
 
-  Grid(Rect bounds) {
+  Grid(Rect bounds, [String content]) {
     this.bounds = bounds;
     grid = List<List<String>>.generate(bounds.height() + 1, (i) =>
-    List<String>.generate(bounds.width() + 1, (j) => " "));
+            List<String>.generate(bounds.width() + 1, (j) => content ?? " "));
+  }
+  Grid copy() {
+    var copy = Grid(bounds);
+    copy.grid = List<List<String>>.from(grid);
+    return copy;
   }
 
   void set(Point p, String mark) {

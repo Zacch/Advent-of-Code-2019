@@ -10,6 +10,10 @@ var EMPTY = '.';
 
 var ratings = SplayTreeSet<int>();
 
+const ITERATIONS = 200;
+const BASE = (ITERATIONS + 2) ~/ 2;
+final fiveByFive = Rect(0, 0, 5, 5);
+
 Future<void> day24() async {
   var file = File('input/Day24.txt');
 
@@ -27,7 +31,7 @@ Future<void> day24() async {
       p.y++;
       p.x = 0;
     }
-    grid.draw();
+    var startGrid = grid.copy();
 
     while (true) {
       var rating = biodiversityRating(grid);
@@ -38,14 +42,61 @@ Future<void> day24() async {
       ratings.add(rating);
       grid = evolve(grid);
     }
-  }
 
-  var neighbors = make3dNeighbors();
-  for (int i = 0; i < 25; i++) {
-    print('$i: ${neighbors[i]}');
-  }
+    var neighbors = make3dNeighbors();
 
+    var emptyGrid = Grid(fiveByFive, EMPTY);
+
+    var grids = List<Grid>.generate(ITERATIONS + 2, (i) => emptyGrid.copy());
+    grids[BASE] = startGrid.copy();
+    for (var i = 0; i < ITERATIONS; i++) {
+      evolve3d(grids, neighbors);
+    }
+    var totalBugs = 0;
+    grids.forEach((grid) {
+      grid.grid.forEach((line) {
+        totalBugs += line.where((content) => content == BUG).length;
+      });
+    });
+    print('Part 2: $totalBugs');
+  }
 }
+
+int biodiversityRating(Grid grid) {
+  var rating = 0;
+  var factor = 1;
+  for (int y = 0; y < grid.height; y++) {
+    for (int x = 0; x < grid.width; x++) {
+      if (grid.get(Point(x, y)) == BUG) {
+        rating += factor;
+      }
+      factor *= 2;
+    }
+  }
+  return rating;
+}
+
+Grid evolve(Grid oldGrid) {
+  var newGrid = Grid(oldGrid.bounds);
+  for (int y = 0; y < oldGrid.height; y++) {
+    for (int x = 0; x < oldGrid.width; x++) {
+      var p = Point(x, y);
+      var neighbors = 0;
+      if (x > 0 && oldGrid.get(p + Point.LEFT) == BUG) neighbors++;
+      if (y > 0 && oldGrid.get(p + Point.DOWN) == BUG) neighbors++;
+      if (x + 1 < oldGrid.width && oldGrid.get(p + Point.RIGHT) == BUG) neighbors++;
+      if (y + 1 < oldGrid.height && oldGrid.get(p + Point.UP) == BUG) neighbors++;
+      if (oldGrid.get(p) == BUG && neighbors == 1 ||
+          oldGrid.get(p) == EMPTY && (neighbors == 1 || neighbors == 2)) {
+        newGrid.set(p, BUG);
+      } else {
+        newGrid.set(p, EMPTY);
+      }
+    }
+  }
+  return newGrid;
+}
+
 
 List<List<Point3>> make3dNeighbors() {
   final CENTER = Point3(2, 2, 0);
@@ -79,31 +130,24 @@ List<List<Point3>> make3dNeighbors() {
   return allNeighbors;
 }
 
-int biodiversityRating(Grid grid) {
-  var rating = 0;
-  var factor = 1;
-  var p = Point.origin();
-  for (int y = 0; y < grid.height; y++) {
-    for (int x = 0; x < grid.width; x++) {
-      if (grid.get(Point(x, y)) == BUG) {
-        rating += factor;
-      }
-      factor *= 2;
-    }
-  }
-  return rating;
-}
-
-Grid evolve(Grid oldGrid) {
-  var newGrid = Grid(oldGrid.bounds);
-  for (int y = 0; y < oldGrid.height; y++) {
-    for (int x = 0; x < oldGrid.width; x++) {
+void evolve3d(List<Grid> grids, List<List<Point3>> allNeighbors) {
+  var newGrids = List<Grid>();
+  for (var level = 0; level < grids.length; level++) {
+    var oldGrid = grids[level];
+    var newGrid = Grid(oldGrid.bounds);
+    for (int i = 0; i < 25; i++) {
+      var x = i % 5, y = i ~/ 5;
       var p = Point(x, y);
       var neighbors = 0;
-      if (x > 0 && oldGrid.get(p + Point.LEFT) == BUG) neighbors++;
-      if (y > 0 && oldGrid.get(p + Point.DOWN) == BUG) neighbors++;
-      if (x + 1 < oldGrid.width && oldGrid.get(p + Point.RIGHT) == BUG) neighbors++;
-      if (y + 1 < oldGrid.height && oldGrid.get(p + Point.UP) == BUG) neighbors++;
+      for (var p3 in allNeighbors[i]) {
+        var neighborLevel = level + p3.z;
+        if (neighborLevel < 0 || neighborLevel >= grids.length) {
+          continue;
+        }
+        if (grids[neighborLevel].get(p3.toPoint()) == BUG) {
+          neighbors++;
+        }
+      }
       if (oldGrid.get(p) == BUG && neighbors == 1 ||
           oldGrid.get(p) == EMPTY && (neighbors == 1 || neighbors == 2)) {
         newGrid.set(p, BUG);
@@ -111,6 +155,9 @@ Grid evolve(Grid oldGrid) {
         newGrid.set(p, EMPTY);
       }
     }
+    newGrid.set(Point(2, 2), '?');
+    newGrids.add(newGrid);
   }
-  return newGrid;
+  grids.clear();
+  grids.addAll(newGrids);
 }

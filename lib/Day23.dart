@@ -23,23 +23,28 @@ Future<void> day23() async {
     }
 
     var part1 = -1;
+    var steps = 0;
     while (part1 == -1) {
-      for (var computer in network) {
+      for (int i = 0; i < 50; i++) {
+        var computer = network[i];
         if (computer.currentInstruction is Input && computer.input.isEmpty) {
           computer.input.add(-1);
         }
         computer.step();
         if (computer.output.length == 3) {
-          print('Output: ${computer.output}');
+          print('Output from $i to ${computer.output[0]}: X = ${computer.output[1]}, Y = ${computer.output[2]} after $steps steps');
           var destination = computer.output[0];
           if (destination == 255) {
             part1 = computer.output[2];
           } else {
-            network[destination].output.add(computer.output[1]);
-            network[destination].output.add(computer.output[2]);
+            network[destination].input.add(computer.output[1]);
+            network[destination].input.add(computer.output[2]);
           }
           computer.output.clear();
         }
+      }
+      if (++steps % 1000000 == 0) {
+        print('${steps ~/ 1000000} million steps');
       }
     }
     print('Part 1: $part1');

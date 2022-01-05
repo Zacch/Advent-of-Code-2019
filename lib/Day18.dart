@@ -1,6 +1,5 @@
 import 'dart:collection';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:Advent_of_Code_2019/Point.dart';
 import 'package:Advent_of_Code_2019/Rect.dart';
@@ -14,9 +13,23 @@ var Z = 'Z'.codeUnitAt(0);
 var WALL = '#'.codeUnitAt(0);
 var ENTRANCE = '@'.codeUnitAt(0);
 
-var allPaths = Map<int, List<Path>>();
-var shortestPathLength = 1000000000;
-int shortestPathBetweenTwoKeys = 1000000000;
+class State
+{
+  Point Position;
+  int Keys;
+  int Length;
+
+  State(this.Position, this.Keys, this.Length);
+}
+
+class StatePart2
+{
+  List<Point> Positions;
+  int Keys;
+  int Length;
+
+  StatePart2(this.Positions, this.Keys, this.Length);
+}
 
 Future<void> day18() async {
   var file = File('input/Day18.txt');
@@ -28,36 +41,33 @@ Future<void> day18() async {
     var grid = Grid(Rect(1, 0, h, w - 1));
     var p = Point(0, h);
     var entrance = Point.origin();
-    var keys = Map<int, Point>();
     for (var line in contents) {
       line.codeUnits.forEach((c) {
         grid.set(p, String.fromCharCode(c));
         if (c == ENTRANCE) {
           entrance = p.copy();
         }
-        if (isKey(c)) {
-          keys[c] = p.copy();
-        }
         p.x++;
       });
       p.y--;
       p.x = 0;
     }
-    grid.draw();
-    print('Entrance: $entrance');
-    print('Keys -> positions: $keys');
 
-    var pathsFromEntrance = keyPaths(entrance, grid);
-//    print('\nPaths from the entrance to each key:\n$pathsFromEntrance');
-    for (var key in keys.keys) {
-      allPaths[key] = keyPaths(keys[key], grid);
-    }
-//    print('\nPaths from each key to all other keys:\n$allPaths');
-    // Now we have all we need to solve part 1!
-
-    print('shortestPathBetweenTwoKeys: $shortestPathBetweenTwoKeys');
-    var part1 = aStar(pathsFromEntrance, allPaths);
+    var part1 = search(grid, entrance);
     print('Part 1: $part1');
+
+    grid.set(entrance + Point.UP + Point.LEFT, '@');
+    grid.set(entrance + Point.UP, '#');
+    grid.set(entrance + Point.UP + Point.RIGHT, '@');
+    grid.set(entrance + Point.LEFT, '#');
+    grid.set(entrance, '#');
+    grid.set(entrance + Point.RIGHT, '#');
+    grid.set(entrance + Point.DOWN + Point.LEFT, '@');
+    grid.set(entrance + Point.DOWN, '#');
+    grid.set(entrance + Point.DOWN + Point.RIGHT, '@');
+
+    var part2 = searchPart2(grid, entrance);
+    print('Part 2: $part2');
   }
 }
 
@@ -71,197 +81,100 @@ int lockToKey(int lock) {
   return lock - A + a;
 }
 
-// Breadth-first search for all keys in grid
-List<Path> keyPaths(Point start, Grid grid) {
-  var result = List<Path>();
-  var frontier = Queue<Path>();
-  frontier.add(Path(start));
-  var visited = [start];
+String EncodeReached(Point p, int keys)
+{
+  return p.toString() + ":" + keys.toString();
+}
 
-  while (frontier.isNotEmpty) {
+int search(Grid grid, Point startPosition) {
+  var startState = new State(startPosition, 0, 0);
+
+  var reached = new HashSet<String>();
+  reached.add(EncodeReached(startPosition, 0));
+  var frontier = new Queue<State>();
+  frontier.add(startState);
+
+  var shortestPath = 999999999;
+  var mostKeys = 0;
+
+  while (frontier.isNotEmpty)
+  {
     var current = frontier.removeFirst();
-    for (var nextMove in [Point(0, 1), Point(0, -1), Point(-1, 0), Point(1, 0)]) {
-      var nextPosition = current.end + nextMove;
-      if (!visited.contains(nextPosition)) {
+    for (var nextPosition in current.Position.neighbours())
+    {
+      var content = grid.get(nextPosition).codeUnitAt(0);
+      if (content == WALL) continue;
+      if (isLock(content) && (current.Keys & (1 << (content - A))) == 0) continue;
+
+      var newState = new State(nextPosition,
+          isKey(content) ? current.Keys | (1 << (content - a)) : current.Keys,
+          current.Length + 1);
+      if (reached.contains(EncodeReached(nextPosition, newState.Keys))) continue;
+
+      if (newState.Keys == mostKeys && newState.Length < shortestPath) shortestPath = newState.Length;
+
+      if (newState.Keys > mostKeys)
+      {
+        mostKeys = newState.Keys;
+        shortestPath = newState.Length;
+      }
+
+      reached.add(EncodeReached(nextPosition, newState.Keys));
+      frontier.add(newState);
+    }
+  }
+
+  return shortestPath;
+}
+
+
+int searchPart2(Grid grid, Point startPosition) {
+  var startPositions = new List<Point>.generate(0, (index) => Point.origin());
+  startPositions.add(startPosition + Point.UP + Point.LEFT);
+  startPositions.add(startPosition + Point.UP + Point.RIGHT);
+  startPositions.add(startPosition + Point.DOWN + Point.LEFT);
+  startPositions.add(startPosition + Point.DOWN + Point.RIGHT);
+
+  var startState = new StatePart2(startPositions, 0, 0);
+  var reached = new HashSet<String>();
+  reached.add(EncodeReached(startPosition, 0));
+  var frontier = new Queue<StatePart2>();
+  frontier.add(startState);
+
+  var shortestPath = 999999999;
+  var mostKeys = 0;
+
+  while (frontier.isNotEmpty)
+  {
+    var current = frontier.removeFirst();
+    for (var robot = 0; robot < current.Positions.length; robot++) {
+      for (var nextPosition in current.Positions[robot].neighbours())
+      {
         var content = grid.get(nextPosition).codeUnitAt(0);
-        if (content != WALL) {
-          var nextPath = current.copyAndAddPosition(nextPosition);
-          if (isKey(content)) {
-            nextPath.key = content;
-            result.add(nextPath);
-            shortestPathBetweenTwoKeys = min(shortestPathBetweenTwoKeys, nextPath.length);
-          }
-          if (isLock(content)) {
-            nextPath.locks.add(lockToKey(content));
-          }
-          frontier.add(nextPath);
-          visited.add(nextPosition);
+        if (content == WALL) continue;
+        if (isLock(content) && (current.Keys & (1 << (content - A))) == 0) continue;
+        if (reached.contains(EncodeReached(nextPosition, current.Keys))) continue;
+
+        var newPositions = new List<Point>.generate(0, (index) => Point.origin());
+        for (var i = 0; i < current.Positions.length; i++)
+          newPositions.add(i == robot ? nextPosition : current.Positions[i]);
+
+        var newState = new StatePart2(newPositions,
+            isKey(content) ? current.Keys | (1 << (content - a)) : current.Keys,
+            current.Length + 1);
+
+        if (newState.Keys == mostKeys && newState.Length < shortestPath) shortestPath = newState.Length;
+        if (newState.Keys > mostKeys)
+        {
+          mostKeys = newState.Keys;
+          shortestPath = newState.Length;
         }
+
+        reached.add(EncodeReached(newState.Positions[robot], newState.Keys));
+        frontier.add(newState);
       }
     }
   }
-  return result;
+
+  return shortestPath;
 }
-
-// Depth-first search didn't work so well. This is the output after two DAYS of execution:
-// Tried 4645500000 paths so far. Shortest is 4896
-// Tried 4645510000 paths so far. Shortest is 4896
-// Tried 4645520000 paths so far. Shortest is 4896
-// Tried 4645530000 paths so far. Shortest is 4896
-
-var pathsTried = 0;
-
-// Dept-first recursive
-void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, Map<int, List<Path>> futurePaths) {
-  var keysTaken = pathsTaken.map((path) => path.key);
-  if (futurePaths.isEmpty) {
-    if (lengthSoFar < shortestPathLength) {
-      print('New Shortest Path ($lengthSoFar): ${keysTaken.map((k) => String.fromCharCode(k))}');
-      shortestPathLength = lengthSoFar;
-    }
-    pathsTried++;
-    if (pathsTried % 10000 == 0) {
-      print('Tried $pathsTried paths so far. Shortest is $shortestPathLength');
-    }
-    return;
-  }
-  var possiblePaths = paths.where((path) => path.locks.where((lock) => !keysTaken.contains(lock)).isEmpty);
-  if (possiblePaths.isEmpty) {
-    print('Dead End with keys $keysTaken at $paths!');
-    return;
-  }
-  for (var path in possiblePaths) {
-    if (futurePaths.containsKey(path.key)) {
-      var nextPaths = futurePaths[path.key];
-      var nextPathsTaken = List<Path>.from(pathsTaken);
-      nextPathsTaken.add(path);
-      var nextFuturePaths = Map<int, List<Path>>.from(futurePaths);
-      nextFuturePaths.remove(path.key);
-      findShortestPath(nextPaths, lengthSoFar + path.length, nextPathsTaken, nextFuturePaths);
-    }
-  }
-}
-
-//---------------------------------------------------------
-// Modified A* search for the shortest path.
-// Hmm:
-// Iterations so far: 82720000. Priority 4862. Paths in frontier: 47435320, Skipped: 25287284, Keys: 24
-// Iterations so far: 82730000. Priority 4680. Paths in frontier: 47437852, Skipped: 25293028, Keys: 23
-// Iterations so far: 82740000. Priority 4858. Paths in frontier: 47441725, Skipped: 25298568, Keys: 22
-// Exhausted heap space, trying to allocate 4194320 bytes.
-// Unhandled exception:
-// Out of Memory
-
-int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys) {
-  var frontier = SplayTreeMap<int, List<PathList>>();
-  var start = PathList([], pathsFromEntrance, allPathsBetweenKeys);
-
-  frontier[0] = [start];
-
-  var iterations = 0;
-  var skippedPaths = 0;
-
-  while (frontier.isNotEmpty) {
-    var firstKey = frontier.firstKey();
-    var current = frontier[firstKey].removeAt(0);
-    if (frontier[firstKey].isEmpty) {
-      frontier.remove(firstKey);
-    }
-
-    var keysTaken = current.pathsTaken.map((path) => path.key);
-    if ( ++iterations % 100000 == 0) {
-      var keys = SplayTreeSet<String>.from(current.pathsTaken.map((path) => String.fromCharCode(path.key)));
-      print('Iterations so far: ${iterations ~/ 1000} K. Priority ${current.priority}. '
-          'Paths in frontier: ${frontier.values.fold(0, (s, list) => s + list.length)}, '
-          'Skipped: $skippedPaths, Keys: ${keys.length}');
-    }
-    if (current.futurePaths.isEmpty) {
-      print('The shortest path is ${keysTaken.map((k) => String.fromCharCode(k))} (${current.length})');
-      return current.length;
-    }
-    var possiblePaths = current.outgoingPaths.where(
-            (path) => !keysTaken.contains(path.key) && path.locks.where((lock) => !keysTaken.contains(lock)).isEmpty);
-    if (possiblePaths.isEmpty) {
-      print('Dead End with keys $keysTaken at ${current.pathsTaken}!');
-      return -1;
-    }
-
-    for (var path in possiblePaths) {
-      var nextOutgoingPaths = current.futurePaths[path.key];
-      var nextPathsTaken = List<Path>.from(current.pathsTaken);
-      nextPathsTaken.add(path);
-      var nextFuturePaths = Map<int, List<Path>>.from(current.futurePaths);
-      nextFuturePaths.remove(path.key);
-      var next = PathList(nextPathsTaken, nextOutgoingPaths, nextFuturePaths);
-      if (next.length + next.futurePaths.keys.length * shortestPathBetweenTwoKeys < 4896) {
-        if (frontier.containsKey(next.priority)) {
-          frontier[next.priority].add(next);
-        } else {
-          frontier[next.priority] = [next];
-        }
-      } else {
-        skippedPaths++;
-      }
-    }
-  }
-  return 0;
-}
-//---------------------------------------------------------
-  class Path {
-  int key = 0;
-  var length = 0;
-  var locks = List<int>();
-  var end = Point.origin();
-
-  Path(this.end);
-
-  Path copy() {
-  var copy = Path(end);
-  copy.length = length;
-  copy.locks.addAll(locks);
-  return copy;
-  }
-
-  Path copyAndAddPosition(Point nextPosition) {
-  var result = copy();
-  result.length++;
-  result.end = nextPosition;
-  return result;
-  }
-
-  @override String toString() {
-  return 'Path{to:$key length: $length, locks: $locks, end: $end}\n';
-  }
-
-  @override bool operator ==(Object other) =>
-  identical(this, other) || other is Path && runtimeType == other.runtimeType && end == other.end;
-
-  @override int get hashCode => end.hashCode;
-  }
-
-//---------------------------------------------------------
-const KEY_VALUE = 210;
-class PathList {
-
-  var pathsTaken = List<Path>();
-  var outgoingPaths = List<Path>();
-  var futurePaths = Map<int, List<Path>>();
-  int get length => pathsTaken.fold(0, (s, p) => s + p.length);
-
-  // This is the heuristic we use for the A* search – it will never overestimate the
-  // distance to the goal, so we will find the shortest path.
-  // int get priority => length + futurePaths.keys.length * shortestPathBetweenTwoKeys;
-  int get priority => length + (futurePaths.keys.length) * KEY_VALUE;
-
-  PathList(this.pathsTaken, this.outgoingPaths, this.futurePaths);
-
-  @override
-  bool operator ==(Object other) =>
-  identical(this, other) ||
-  other is PathList &&
-  runtimeType == other.runtimeType &&
-  priority == other.priority;
-
-  @override
-  int get hashCode => pathsTaken.toString().hashCode;
-  }

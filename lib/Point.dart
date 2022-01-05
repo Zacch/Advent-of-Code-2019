@@ -34,6 +34,15 @@ class Point {
     return x.abs() + y.abs();
   }
 
+  List<Point> neighbours() {
+    var result = new List<Point>.generate(0, (index) => Point.origin());
+    result.add(this + UP);
+    result.add(this + LEFT);
+    result.add(this + RIGHT);
+    result.add(this + DOWN);
+    return result;
+  }
+
   Point turnLeft() {
     return Point(-y, x);
   }

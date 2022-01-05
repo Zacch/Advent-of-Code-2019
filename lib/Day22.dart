@@ -37,9 +37,12 @@ Future<void> day22() async {
     const totalIterations = 101741582076661;
     var cycleLength = 0;
     var currentPosition = 2020;
-    while (true) {
+    var positions = Set<int>();
+    while (cycleLength < 30) {
+      print('${cycleLength}: $currentPosition');
       if (cycleLength % 1000000 == 0) {
-        print('$cycleLength: $currentPosition');
+
+        print('${cycleLength ~/ 1000000} M: $currentPosition');
       }
       currentPosition = getIndexBefore(currentPosition, techniques);
       cycleLength++;
@@ -47,12 +50,16 @@ Future<void> day22() async {
         print('Found cycle! $cycleLength: $currentPosition');
         break;
       }
+      if (positions.contains(currentPosition)) {
+        print('Whoa! $currentPosition is in positions! (size ${positions.length}');
+      }
     }
     print('cycleLength $cycleLength');
     //  40528000000: 44776915728345
     //  40529000000: 66142825362176
     //  40530000000: 105602838143656
     //  40531000000: 29871572303647
+//  119315717514047
 
 }
 }

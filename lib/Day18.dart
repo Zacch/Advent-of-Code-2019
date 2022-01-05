@@ -16,7 +16,7 @@ var ENTRANCE = '@'.codeUnitAt(0);
 
 var allPaths = Map<int, List<Path>>();
 var shortestPathLength = 1000000000;
-int shortestPathOverall = 1000000000;
+int shortestPathBetweenTwoKeys = 1000000000;
 
 Future<void> day18() async {
   var file = File('input/Day18.txt');
@@ -55,7 +55,7 @@ Future<void> day18() async {
 //    print('\nPaths from each key to all other keys:\n$allPaths');
     // Now we have all we need to solve part 1!
 
-    print('shortestPathOverall: $shortestPathOverall');
+    print('shortestPathBetweenTwoKeys: $shortestPathBetweenTwoKeys');
     var part1 = aStar(pathsFromEntrance, allPaths);
     print('Part 1: $part1');
   }
@@ -89,7 +89,7 @@ List<Path> keyPaths(Point start, Grid grid) {
           if (isKey(content)) {
             nextPath.key = content;
             result.add(nextPath);
-            shortestPathOverall = min(shortestPathOverall, nextPath.length);
+            shortestPathBetweenTwoKeys = min(shortestPathBetweenTwoKeys, nextPath.length);
           }
           if (isLock(content)) {
             nextPath.locks.add(lockToKey(content));
@@ -143,7 +143,14 @@ void findShortestPath(List<Path> paths, int lengthSoFar, List<Path> pathsTaken, 
 }
 
 //---------------------------------------------------------
-// Modified A* search for the shortest path
+// Modified A* search for the shortest path.
+// Hmm:
+// Iterations so far: 82720000. Priority 4862. Paths in frontier: 47435320, Skipped: 25287284, Keys: 24
+// Iterations so far: 82730000. Priority 4680. Paths in frontier: 47437852, Skipped: 25293028, Keys: 23
+// Iterations so far: 82740000. Priority 4858. Paths in frontier: 47441725, Skipped: 25298568, Keys: 22
+// Exhausted heap space, trying to allocate 4194320 bytes.
+// Unhandled exception:
+// Out of Memory
 
 int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys) {
   var frontier = SplayTreeMap<int, List<PathList>>();
@@ -152,6 +159,7 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
   frontier[0] = [start];
 
   var iterations = 0;
+  var skippedPaths = 0;
 
   while (frontier.isNotEmpty) {
     var firstKey = frontier.firstKey();
@@ -161,8 +169,11 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
     }
 
     var keysTaken = current.pathsTaken.map((path) => path.key);
-    if ( ++iterations % 10000 == 0) {
-      print('Iterations so far: $iterations. Priority ${current.priority}. Paths in frontier: ${frontier.values.fold(0, (s, list) => s + list.length)}.');
+    if ( ++iterations % 100000 == 0) {
+      var keys = SplayTreeSet<String>.from(current.pathsTaken.map((path) => String.fromCharCode(path.key)));
+      print('Iterations so far: ${iterations ~/ 1000} K. Priority ${current.priority}. '
+          'Paths in frontier: ${frontier.values.fold(0, (s, list) => s + list.length)}, '
+          'Skipped: $skippedPaths, Keys: ${keys.length}');
     }
     if (current.futurePaths.isEmpty) {
       print('The shortest path is ${keysTaken.map((k) => String.fromCharCode(k))} (${current.length})');
@@ -174,6 +185,7 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
       print('Dead End with keys $keysTaken at ${current.pathsTaken}!');
       return -1;
     }
+
     for (var path in possiblePaths) {
       var nextOutgoingPaths = current.futurePaths[path.key];
       var nextPathsTaken = List<Path>.from(current.pathsTaken);
@@ -181,10 +193,14 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
       var nextFuturePaths = Map<int, List<Path>>.from(current.futurePaths);
       nextFuturePaths.remove(path.key);
       var next = PathList(nextPathsTaken, nextOutgoingPaths, nextFuturePaths);
-      if (frontier.containsKey(next.priority)) {
-        frontier[next.priority].add(next);
+      if (next.length + next.futurePaths.keys.length * shortestPathBetweenTwoKeys < 4896) {
+        if (frontier.containsKey(next.priority)) {
+          frontier[next.priority].add(next);
+        } else {
+          frontier[next.priority] = [next];
+        }
       } else {
-        frontier[next.priority] = [next];
+        skippedPaths++;
       }
     }
   }
@@ -224,7 +240,9 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
   }
 
 //---------------------------------------------------------
-  class PathList {
+const KEY_VALUE = 210;
+class PathList {
+
   var pathsTaken = List<Path>();
   var outgoingPaths = List<Path>();
   var futurePaths = Map<int, List<Path>>();
@@ -232,7 +250,8 @@ int aStar(List<Path> pathsFromEntrance, Map<int, List<Path>> allPathsBetweenKeys
 
   // This is the heuristic we use for the A* search – it will never overestimate the
   // distance to the goal, so we will find the shortest path.
-  int get priority => length + futurePaths.keys.length * shortestPathOverall;
+  // int get priority => length + futurePaths.keys.length * shortestPathBetweenTwoKeys;
+  int get priority => length + (futurePaths.keys.length) * KEY_VALUE;
 
   PathList(this.pathsTaken, this.outgoingPaths, this.futurePaths);
 
